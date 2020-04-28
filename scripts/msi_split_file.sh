@@ -14,4 +14,4 @@ do
     todir=../msimut_split/msimut$n
     [ -d "$todir" ] || mkdir "$todir"
     cp "$i" "$todir" 
-done 
+done
