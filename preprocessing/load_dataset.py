@@ -15,7 +15,9 @@ mss_dir = os.path.join(data_dir, "mss_split/mss")
 def extract_file_names(data_dir):
     patients = defaultdict(list)
     total_iteration = 0
-    for i in range(1, max_size + 1):
+    for i in tqdm(range(1, max_size + 1)):
+        if not os.path.isdir(data_dir + str(i)):
+            continue
         all_files = listdir(data_dir + str(i))
         for file_name in all_files:
             # Only accept the jpg file
@@ -24,14 +26,13 @@ def extract_file_names(data_dir):
                 components = file_name.split("-")
                 patient_id = "-".join(components[2:5])
                 patients[patient_id].append([file_name, i])
-        break
     
     print(">> Total running {}".format(total_iteration))
 
     return patients
 
 def load_raw_data(data_dir):
-    print(">> Loading msimut at {}".format(msimut_dir))
+    print("\n>> Loading msimut at {}".format(msimut_dir))
     msimut_patients = extract_file_names(msimut_dir)
 
     print("\n>> Loading msimut at {}".format(mss_dir)) 

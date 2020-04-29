@@ -1,0 +1,8 @@
+numpy==1.18.2
+tensorboard==2.1.1
+tensorboardX==2.0
+tensorflow==2.1.0
+tensorflow-estimator==2.1.0
+torch==1.4.0
+torchvision==0.5.0
+torchviz==0.0.1
