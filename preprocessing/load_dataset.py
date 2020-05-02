@@ -8,30 +8,25 @@ from preprocessing.dataset_class import MSIDataset
 max_size = 1000
 data_dir = os.path.join(os.getcwd(), "data")
 
-# Get the name of in file
-msimut_dir = os.path.join(data_dir, "msimut_split/msimut")
-mss_dir = os.path.join(data_dir, "mss_split/mss")
-
 def extract_file_names(data_dir):
     patients = defaultdict(list)
     total_iteration = 0
-    for i in tqdm(range(1, max_size + 1)):
-        if not os.path.isdir(data_dir + str(i)):
-            continue
-        all_files = listdir(data_dir + str(i))
-        for file_name in all_files:
-            # Only accept the jpg file
-            if ".jpg" in file_name: 
-                total_iteration += 1
-                components = file_name.split("-")
-                patient_id = "-".join(components[2:5])
-                patients[patient_id].append([file_name, i])
+    if not os.path.isdir(data_dir): return
+
+    # Read from the file
+    all_files = listdir(data_dir)
+    for file_name in tqdm(all_files):
+        # Only accept the jpg file
+        if ".jpg" in file_name: 
+            components = file_name.split("-")
+            patient_id = "-".join(components[2:5])
+            patients[patient_id].append([file_name])
     
-    print(">> Total running {}".format(total_iteration))
+    print(">> Total running {}".format(len(all_files)))
 
     return patients
 
-def load_raw_data(data_dir):
+def load_raw_data(data_dir, msimut_dir, mss_dir):
     print("\n>> Loading msimut at {}".format(msimut_dir))
     msimut_patients = extract_file_names(msimut_dir)
 
@@ -74,9 +69,16 @@ def transformation(dataset, *patients_table):
     
     return finalize_dataset
 
-def raw_to_dict():
+def raw_to_dict(data_mode = "normal"):
+    # Get the name of in file
+    msimut_dir = os.path.join(data_dir, "msimut")
+    mss_dir = os.path.join(data_dir, "mss")
+    if data_mode == "small":
+        msimut_dir = os.path.join(data_dir, "msimut_small")
+        mss_dir = os.path.join(data_dir, "mss_small")
+
     # Load patients from files
-    msimut_patients, mss_patients = load_raw_data(data_dir)
+    msimut_patients, mss_patients = load_raw_data(data_dir, msimut_dir = msimut_dir, mss_dir = mss_dir)
     # Custom split data
     train, val = custom_split(mss_patients = mss_patients, msimut_patients = msimut_patients)
     # Transform train and val
@@ -84,4 +86,4 @@ def raw_to_dict():
     trainset = transformation(train, mss_patients, msimut_patients)
     valset = transformation(val, mss_patients, msimut_patients)
     print("\n>> Done!")
-    return MSIDataset(trainset, data_dir), MSIDataset(valset, data_dir)
+    return MSIDataset(trainset, data_dir, data_mode = data_mode), MSIDataset(valset, data_dir, data_mode = data_mode)

@@ -1,7 +1,7 @@
 # Fdb version 3
-["pdflatex"] 1588285061 "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex" "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf" "introduction" 1588285063
-  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.aux" 1588285062 385 214e187f173a0143c4c867c1e16a7751 ""
-  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex" 1588285061 5578 bacf6c7007104fcb86579092ba9d7dee ""
+["pdflatex"] 1588285950 "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex" "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf" "introduction" 1588286140
+  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.aux" 1588285952 385 214e187f173a0143c4c867c1e16a7751 ""
+  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex" 1588285949 5605 0a2a44c26539425f4744848cb19ae87c ""
   "/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2020/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2020/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
@@ -35,12 +35,12 @@
   "/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1586288239 4811913 0be9a7e86c70a26e5e3042966bcd7097 ""
   "/usr/local/texlive/2020/texmf-var/web2c/pdftex/pdflatex.fmt" 1586288259 2432462 fd0fa20e9a3cb5f8169fd0ba1c955158 ""
   "/usr/local/texlive/2020/texmf.cnf" 1586288231 577 d60164b4589a341208aff7a667fbbdcb ""
-  "ieeeconf.cls" 1588263796 197436 33af3dd5069be3a823450cf46fa3facf ""
-  "introduction.aux" 1588285062 385 214e187f173a0143c4c867c1e16a7751 "pdflatex"
-  "introduction.tex" 1588285061 5578 bacf6c7007104fcb86579092ba9d7dee ""
+  "ieeeconf.cls" 1588285722 197436 33af3dd5069be3a823450cf46fa3facf ""
+  "introduction.aux" 1588285952 385 214e187f173a0143c4c867c1e16a7751 "pdflatex"
+  "introduction.tex" 1588285949 5605 0a2a44c26539425f4744848cb19ae87c ""
   (generated)
-  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf"
-  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.log"
-  "introduction.pdf"
-  "introduction.aux"
   "introduction.log"
+  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.log"
+  "introduction.aux"
+  "introduction.pdf"
+  "/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf"

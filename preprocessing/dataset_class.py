@@ -7,17 +7,23 @@ import numpy as np
 import os
 
 class MSIDataset(Dataset):
-    def __init__(self, dataset, data_dir):
+    def __init__(self, dataset, data_dir, data_mode = "normal"):
         # Dataset will have form (ImageName, label)
         self.dataset = dataset
         self.data_dir = data_dir
+        self.data_mode = data_mode
         self.to_tensor = transforms.ToTensor()
         self.int_labels = None
         self.str_to_int()
     
     def __getitem__(self, index):
-        image_name, folder_num, label = self.dataset[index]
-        folder_dir = os.path.join(self.data_dir, label + "_split", label + str(folder_num), image_name)
+        image_name, label = self.dataset[index]
+
+        # Check whether we run small or big
+        folder_dir = os.path.join(self.data_dir, label, image_name)
+        if self.data_mode == "small":
+            folder_dir = os.path.join(self.data_dir, label + "_small",  image_name)
+
         image = Image.open(folder_dir)
         image_to_tensor = self.to_tensor(image)
         int_label = self.int_labels[index]
@@ -29,4 +35,4 @@ class MSIDataset(Dataset):
 
     def str_to_int(self):
         ## This will convert string labels to int number
-        self.int_labels = np.unique(self.dataset[:, 2], return_inverse = True)[1]
+        self.int_labels = np.unique(self.dataset[:, 1], return_inverse = True)[1]

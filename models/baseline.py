@@ -14,22 +14,43 @@ class BaseLineModel(nn.Module):
     def __init__(self, trainloader, valloader, num_classes = 2):
         super().__init__()
         self.trainloader = trainloader
-        self.valloader = valloader
+        self.valloader = valloader        
         # Load pretrained model
         self.model = torchvision.models.resnet18(pretrained = True)
         self.output_weight = nn.Linear(1000, num_classes)
 
-        self.finetune_model = nn.Sequential(
-            self.model,
-            self.output_weight
-        )
+        self.init_weight()
+    
+    def init_weight(self):
+        nn.init.normal_(self.output_weight.weight.data, mean = 0, std = 0.01)
 
     def forward(self, inputs):
-        outputs = self.finetune_model(inputs)
+        inputs = self.model(inputs)
+        outputs = self.output_weight(inputs)
         return outputs
+
+    def freeze(self, num_layers = 1, is_testing = False):
+        '''
+            TODO: How to freeze layers of ResNet?
+        '''
+        total_layers = len(list(self.children()))
+        if num_layers is None: num_layers = total_layers + 1
+
+        for index, layer in enumerate(self.children()):
+            for param in layer.parameters():
+                if index < total_layers - num_layers:
+                    param.requires_grad = False
+                else: 
+                    param.requires_grad = True
+
+        if is_testing:
+            for name, p in self.named_parameters():
+                print(name, p.requires_grad)
+
+
     
     def lr_finder(self, loss_func):
-        model = copy.deepcopy(self.finetune_model)
+        model = copy.deepcopy(self)
 
         beta = 0.95
         # Range of learning rate
@@ -70,7 +91,8 @@ class BaseLineModel(nn.Module):
             optimizer.param_groups[0]['lr'] = lr
 
         ## Loss vs. learning rate    
-        plt.plot(log_lrs[10:-5], losses[10:-5])
+        plt.plot(log_lrs, losses)
         plt.title("Loss vs. learning rate")
-        plt.set(xlabel='lr', ylabel='loss')
+        plt.xlabel('learning rate') 
+        plt.ylabel('loss')
         plt.show()
