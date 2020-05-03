@@ -25,8 +25,10 @@ class MSIDataset(Dataset):
             folder_dir = os.path.join(self.data_dir, label + "_small",  image_name)
 
         image = Image.open(folder_dir)
+        image = image.convert('RGB')
         image_to_tensor = self.to_tensor(image)
-        int_label = self.int_labels[index]
+        int_label = np.array(self.int_labels[index])
+        int_label = torch.from_numpy(int_label)
         return image_to_tensor, int_label
     
     def __len__(self):

@@ -10,12 +10,11 @@ data_dir = os.path.join(os.getcwd(), "data")
 
 def extract_file_names(data_dir):
     patients = defaultdict(list)
-    total_iteration = 0
     if not os.path.isdir(data_dir): return
 
     # Read from the file
     all_files = listdir(data_dir)
-    for file_name in tqdm(all_files):
+    for file_name in tqdm(all_files[:50]):
         # Only accept the jpg file
         if ".jpg" in file_name: 
             components = file_name.split("-")
