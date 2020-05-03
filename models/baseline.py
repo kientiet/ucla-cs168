@@ -161,4 +161,5 @@ class BaseLineModel(pl.LightningModule):
 '''
     TODO: 1/ how to save as checkpoint
         2/ How to reload and run check point
+        3/ Weight decay
 '''

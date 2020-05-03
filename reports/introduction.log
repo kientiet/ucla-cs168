@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.4.7)  30 APR 2020 15:32
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.4.7)  3 MAY 2020 11:39
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -121,26 +121,120 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <9> on input line 32.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 32.
- [1{/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
+LaTeX Font Info:    Calculating math sizes for size <11> on input line 65.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <11> on input line 65.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7.69997> on input line 65.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5.5> on input line 65.
+
+Underfull \hbox (badness 10000) in paragraph at lines 65--65
+[][][]\OT1/ptm/m/n/9 http://www.andrewjanowczyk.com/download-tcga-digital-
+ []
+
+[1{/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
-] [2
+]
+Underfull \hbox (badness 3058) in paragraph at lines 80--81
+\OT1/ptm/m/n/9 e-fit with in-tra-tu-moral and sys-temic im-mune re-sponses
+ []
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 		\bibitem{c6} Schlemper, Jo &
+                                    Oktay, Ozan & Schaap, Michiel & Heinrich...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 		\bibitem{c6} Schlemper, Jo & Oktay, Ozan &
+                                                  Schaap, Michiel & Heinrich...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 ...mper, Jo & Oktay, Ozan & Schaap, Michiel &
+                                                   Heinrich, Mattias & Kainz...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 ...an & Schaap, Michiel & Heinrich, Mattias &
+                                                   Kainz, Bernhard & Glocker...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 ...el & Heinrich, Mattias & Kainz, Bernhard &
+                                                   Glocker, Ben & Rueckert, ...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.tex:90: Misplaced alignment tab character &.
+l.90 ...Mattias & Kainz, Bernhard & Glocker, Ben &
+                                                   Rueckert, Daniel. (2019)....
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
 
 
-] (/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.aux) ) 
+Underfull \hbox (badness 4328) in paragraph at lines 94--95
+\OT1/ptm/m/n/9 si-fi-ca-tion with Graph Con-vo-lu-tional Net-works." ArXiv
+ []
+
+LaTeX Info: Symbol \textasciidieresis not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 96.
+
+Underfull \hbox (badness 4967) in paragraph at lines 96--97
+[]\OT1/ptm/m/n/9 Michael Def-fer-rard, Xavier Bres-son, and Pierre Van-
+ []
+
+[2
+
+
+] (/Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.aux)
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
 Here is how much of TeX's memory you used:
- 1039 strings out of 480608
- 18926 string characters out of 5903631
- 256516 words of memory out of 5000000
- 16986 multiletter control sequences out of 15000+600000
- 562092 words of font info for 79 fonts, out of 8000000 for 9000
+ 1060 strings out of 480608
+ 19255 string characters out of 5903631
+ 257516 words of memory out of 5000000
+ 17004 multiletter control sequences out of 15000+600000
+ 566008 words of font info for 86 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 27i,7n,21p,310b,288s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texlive/2020/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on /Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf (2 pages, 33230 bytes).
+ 27i,8n,21p,384b,288s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}{/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texlive/2020/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
+Output written on /Users/timothytiet/Documents/MyProject/code/python/ucla-cs168/reports/introduction.pdf (2 pages, 44265 bytes).
 PDF statistics:
- 20 PDF objects out of 1000 (max. 8388607)
- 13 compressed objects within 1 object stream
+ 25 PDF objects out of 1000 (max. 8388607)
+ 17 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
