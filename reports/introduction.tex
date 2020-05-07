@@ -4,7 +4,7 @@
 
 % TEMPLATE for UCLA CS168
 
-\documentclass[letterpaper, 11 pt, journal]{ieeeconf} 
+\documentclass[letterpaper, 10 pt, journal]{ieeeconf} 
 
 \overrideIEEEmargins
 % See the \addtolength command later in the file to balance the column lengths
@@ -35,41 +35,44 @@
 
 	\section{Introduction}
 
-	The common way of testing whether a treatment would work on a cancer cell is to establish two groups of voluntary patients where one group 
-	will be given the treatment while the other group is not. Then, the researchers will observe the effect of the treatment, and conducting 
-	statistical tests in order to decide whether the medicine will be safe for further usage [1]. However, when the new patients request for
-	the treatment, it takes the doctors a long time to look at the cancer cells to decide if the new patients' cancer cells will be suitable for 
-	that particular medical treatment [2].
-
-	With the current development of deep learning, especially computer vision, many current state-of-the-art computer vision models have been applied to 
-	detect the cancer cells [2], segmenting the cancer cells or tumors [3], [4] etc. Besides these common tasks, these models are usually used as a guide 
-	for another model to classify whether a particular patient's cancer cells will be benefited from the treatment such as [2] in which they used 
-	another resnet18 [5] to decide the benefit of the treatment after dececting the cancer cells with different resnet18.
-		
-	In this project, our task is to decide whether the patient should get the treatment based on their current distributed cancer cells. To achieve this
-	task, we will extend the model of [2] by applying attention-based mechanism into the models. Although the traditional convolution neural network (CNN)
-	has already given the good result on this task, its drawback is the lack of the local context among cells in the picture. First of all, 
-	the network will corrupt the input image into smaller features through convolution filters, and produce the only one common context vector for the whole 
-	image after going through the stack of layers. This is a drawback because the network will only look at small region on the image without considering 
-	the interaction between its neighbors. In the other words, the network only filters particular features about the cells. As we can see, this will not 
-	be the case in medical image because the cancer cells usually interact with each other [1], [4], [6]. 
-	As a result, this can lead to missing the overall picture of the cell (due to lack of context). 
+	The common way of testing whether a treatment for cancer is effective is to establish two groups of voluntary patients where one group is given the treatment while the other group is not. 
+	Then, the researchers will observe the effect of the treatment, and conduct statistical tests in order to decide whether the treatment is safe for further usage [1]. However, when the new 
+	patients request for the treatment, it takes the doctors a long time to look at the cancer cells to decide if the new patients' cancer cells will be suitable for that particular medical 
+	treatment [2]. Besides, due to the high cost and the long process, many patients do not get the treatment on time. Thus, cancerous cells impair the immune system and prevent the body 
+	from functioning properly [12].	
 	
-	As demonstrated in [4], [6], [7] . Adding the attention blocks, it will yield better result because the network can give more 
-	attention to the more important features and the general interaction among blocks of filters. 
-	Therefore, our hypothesis with the extension of the model in [2] is that by adding attention blocks, the accuracy of the model will be improved by large margin and 
-	it can be easier to interpret the result of the prediction.
-
-	Since we follow and extend the model of [2], we will also use their dataset in order to compare the performance of our models. The dataset of [2] is orginally 
-	published by National Cancer Institutes (https://portal.gdc.cancer.gov/), and it records historical smaples of human coloractal cancer. Each image includes: coloractal cancer and healthy tissue
+	With the current development of deep learning, especially computer vision, many current state-of-the-art computer vision models 
+	have been applied to detect the cancer cells [2], segmenting the cancer cells or tumors [3], [4] etc. Besides these common tasks, 
+	these models are usually used as a guide for another model to classify whether a particular patient's cancer cells will be benefited from the 
+	treatment such as [2] in which they used another resnet18 [5] to decide the benefit of the treatment after detecting the cancer cells 
+	with different resnet18.		
+	
+	In this project, our task is to decide whether the patient should get the treatment based on their current distributed cancer cells. 
+	To achieve this task, we will extend the model of [2] by applying attention-based mechanisms into the models. Although the traditional 
+	convolution neural network (CNN) has already given a good result on this task, its drawback is the lack of the local context among cells in 
+	the picture. First of all, the network will corrupt the input image into smaller features through convolution filters, and produce the only one 
+	common context vector for the whole image after going through the stack of layers. This is a drawback because the network will only look at a 
+	small region on the image without considering the interaction between its neighbors. In the other words, the network only filters particular features 
+	about the cells. As we can see, this will not be the case in medical image because the cancer cells usually interact with each other [1], [4], [6]. 
+	As a result, this can lead to missing the overall picture of the cell (due to lack of context).	
+	
+	As demonstrated in [4], [6], [7], adding the attention blocks, it will yield better results because the network can give more attention to the 
+	more important features and the general interaction among blocks of filters. Although most of these works were used for segmentation purpose instead 
+	of giving the decision whether the patient should get the treatment or not,.  we will extend of the model in [2] by adding attention blocks (for both channels 
+	and features). We also hypothesize that the accuracy of the model will be improved by large margin and it can be easier to interpret the result of the 
+	prediction. The reason is by adding attention blocks, we can give more relevant features and channels with higher weight, and we can also track the heatmap or 
+	activiation map of these attention blocks in order to give us the interpretation of the inference results.
+	
+	Since we follow and extend the model of [2], we will also use their dataset in order to compare the performance of our models. The dataset of [2] 
+	is originally published by National Cancer Institutes (https://portal.gdc.cancer.gov/), and it records historical samples of human colorectal cancer. 
+	Each image includes: colorectal cancer and healthy tissue
 	\footnote{http://www.andrewjanowczyk.com/download-tcga-digital-pathology-images-ffpe/}.
 	
 	In addition, we also observe that with the traditional CNN (including CNN with attention blocks), the network does not strongly learn the real 
-	interaction between a immuse cell and other cancer cells due to the covolve filter blocks and the lack of well-defined the relationship between 
-	those two cells.  In the recent years, the graph-based CNN has started to gain better achievement compared to the traditional CNN due to the understanding of topology of 
-	the dataset such as [8], [9], [10]. Therefore, we will apply this approach to solve the task we mentioned above by (1) converting the raw image to the graph 
-	and (2) applying the graph-based CNN on the constructed graph by following the practice of [8].
-
+	interaction between an immune cell and other cancer cells due to the convolve filter blocks and the lack of well-defined relationship between those 
+	two cells.  In recent years, the graph-based CNN has started to gain better achievement compared to the traditional CNN due to the understanding of 
+	topology of the dataset such as [8], [9], [10]. Therefore, we will apply this approach to solve the task we mentioned above by (1) converting the raw 
+	image to the graph and (2) applying the graph-based CNN on the constructed graph by following the practice of [8].
 	
 	\cleardoublepage
 	
@@ -96,6 +99,11 @@
 		\bibitem{c9} Michael Defferrard, Xavier Bresson, and Pierre Vandergheynst. Convolutional neural networks on ¨ graphs with fast localized spectral filtering. In Advances in neural information processing systems (NIPS), 2016.
 
 		\bibitem{c10} T. Kipf, E. Fetaya, K.-C. Wang, M. Welling, and R. Zemel, “Neural relational inference for interacting systems,” arXiv preprint arXiv:1802.04687, 2018.
+
+		\bibitem{c11} “Cancer Stat Facts: Common Cancer Sites.” National Cancer Institute, seer.cancer.gov/statfacts/html/common.html.
+
+		\bibitem{c12} Ranchod, Yamini. “What to Know about Cancer.” Medical News Today, 6 Jan. 2020, www.medicalnewstoday.com/articles/323648.
+		
 		
 	\end{thebibliography}
 	
