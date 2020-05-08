@@ -108,7 +108,7 @@ class TrainerSkeleton(pl.LightningModule):
         total_loss = torch.stack([batch["val_loss"] for batch in outputs]).mean()
         self.val_log.append(total_loss.item())
 
-        logs = {"val_loss": total_loss, "log": tensorboard_logs}
+        logs = {"val_loss": total_loss, "log": tensorboard_logs, "f1_score": f1}
         return logs
     
     def train_dataloader(self):
