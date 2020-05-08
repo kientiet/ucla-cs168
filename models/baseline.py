@@ -6,6 +6,7 @@ import torchvision
 
 class BaseLineModel(nn.Module):
     def __init__(self, num_classes = 2):
+        super(BaseLineModel, self).__init__()
         self.num_classes = num_classes
 
         # Load pretrained model

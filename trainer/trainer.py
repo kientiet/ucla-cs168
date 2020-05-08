@@ -1,10 +1,12 @@
 import pytorch_lightning as pl
 import torch
+import torch.nn.functional as F
 import torch.nn as nn
 import torchvision
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score
+import itertools
 import numpy as np
 
 class TrainerSkeleton(pl.LightningModule):
@@ -24,8 +26,11 @@ class TrainerSkeleton(pl.LightningModule):
         '''
         self.criterion = nn.CrossEntropyLoss()
 
-        # learning rate logs
-        self.logs = []
+        # Logging config
+        # self.lr_log = [] # learning rate logs
+        self.training_log = [] # train logs
+        self.val_log = [] # val log
+
 
     def forward(self):
         pass
@@ -43,6 +48,7 @@ class TrainerSkeleton(pl.LightningModule):
         images, labels = train_batch
         logits = self.forward(images)
         loss = self.loss_func(logits, labels)
+        self.training_log.append(loss.item())
         return {"loss": loss}
 
     def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_i, second_order_closure=None):
@@ -50,47 +56,63 @@ class TrainerSkeleton(pl.LightningModule):
             TODO: Add warm start
         '''
         # update params
-        optimizer.step()
+        ## Add learning rate to tensorboard
+        if self.logger:
+            self.logger.experiment.add_scalar("learning_rate", self.optimizer.param_groups[0]["lr"], self.trainer.global_step)
+            
+        self.optimizer.step()
         self.scheduler.step()
-        optimizer.zero_grad()        
+        self.optimizer.zero_grad()        
     
-    def on_batch_end(self):
-        self.logs.append(self.optimizer.param_groups[0]["lr"])
+    # def on_batch_end(self):
+    #     self.lr_log.append(self.optimizer.param_groups[0]["lr"])
 
     def validation_step(self, train_batch, batch_idx):
         images, labels = train_batch
         preds = self.forward(images)
-        val_loss = self.criterion(preds, labels)
-        preds = torch.argmax(F.softmax(preds, dim = 1), dim = 1)
-        return {"confusion_matrix": confusion_matrix(y_true = labels.cpu().numpy(), y_pred = preds.cpu().numpy()),
+        val_loss = self.loss_func(preds, labels)
+        preds = preds.argmax(dim = 1)
+        return {"y_pred": preds.cpu().numpy(),
+            "y_true": labels.cpu().numpy(),
             "val_loss": val_loss}
     
     def validation_epoch_end(self, outputs):
-        '''
-            TODO: print this out after epoch
-        '''
         # tn, fp, fn, tp
-        evaluation = [matrix["confusion_matrix"].ravel() for matrix in outputs]
-        evaluation = np.sum(evaluation, axis = 0)
+        # Evaluate metrics
+        y_pred, y_true = [], []
+        for batch in outputs:
+            y_pred = np.concatenate((y_pred, batch["y_pred"]))
+            y_true = np.concatenate((y_true, batch["y_true"]))
 
-        # Calculate the metrics
-        metrics = {
-            "true_positive": evaluation[-1],
-            "true_negative": evaluation[0],
-            "false_positive": evaluation[1],
-            "false_negative": evaluation[2]
+        accuracy = accuracy_score(y_true, y_pred)
+        f1 = f1_score(y_true, y_pred) 
+        recall = recall_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred)
+
+        tensorboard_logs = {
+            "accuracy_score": accuracy,
+            "f1_score": f1,
+            "recall_score": recall,
+            "precision_score": precision
         }
 
-        logs = {
-            "accuracy": metrics["true_positive"] / np.sum(evaluation) * 100,
-            "precision": metrics["true_positive"] / (metrics["true_positive"] + metrics["false_positive"]),
-            "recall": metrics["true_positive"] / (metrics["true_positive"] + metrics["false_negative"])
-        }
-        logs["f1_score"] = 2 * logs["precision"] * logs["recall"] / (logs["precision"] + logs["recall"])
+        # self.logger.experiment.add_scalars("metrics", tensorboard_logs, self.current_epoch)
+        # Add to one_cycle plot
+        if (self.current_epoch + 1) % self.epoch_per_cycle == 0:
+            self.logger.experiment.add_scalars("one_cycle", tensorboard_logs, self.current_cycle)
+            '''
+                TODO: add confusion matrix here
+            '''
+
+        # Get the total loss of the validation 
+        total_loss = torch.stack([batch["val_loss"] for batch in outputs]).mean()
+        self.val_log.append(total_loss.item())
+
+        logs = {"val_loss": total_loss, "log": tensorboard_logs}
         return logs
     
     def train_dataloader(self):
-        return self.trainloader
+        return self.trainloader        
     
     def val_dataloader(self):
         return self.valloader
