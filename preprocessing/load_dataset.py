@@ -14,7 +14,7 @@ def extract_file_names(data_dir):
 
     # Read from the file
     all_files = listdir(data_dir)
-    for file_name in tqdm(all_files[:50]):
+    for file_name in tqdm(all_files):
         # Only accept the jpg file
         if ".jpg" in file_name: 
             components = file_name.split("-")
