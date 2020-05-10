@@ -27,7 +27,6 @@ class TrainerSkeleton(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss()
 
         # Logging config
-        # self.lr_log = [] # learning rate logs
         self.training_log = [] # train logs
         self.val_log = [] # val log
 
@@ -64,11 +63,8 @@ class TrainerSkeleton(pl.LightningModule):
         self.scheduler.step()
         self.optimizer.zero_grad()        
     
-    # def on_batch_end(self):
-    #     self.lr_log.append(self.optimizer.param_groups[0]["lr"])
-
-    def validation_step(self, train_batch, batch_idx):
-        images, labels = train_batch
+    def validation_step(self, batch, batch_idx):
+        images, labels = batch
         preds = self.forward(images)
         val_loss = self.loss_func(preds, labels)
         preds = preds.argmax(dim = 1)
@@ -110,7 +106,7 @@ class TrainerSkeleton(pl.LightningModule):
 
         logs = {"val_loss": total_loss, "log": tensorboard_logs, "f1_score": f1}
         return logs
-    
+
     def train_dataloader(self):
         return self.trainloader        
     
@@ -121,7 +117,3 @@ class TrainerSkeleton(pl.LightningModule):
         images, labels = next(iter(self.trainloader))
         _, channels, _, _ = images[0]
         return channels
-    
-    def show_lr(self):
-        plt.plot(range(len(self.logs)), self.logs)
-        plt.show()

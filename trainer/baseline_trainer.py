@@ -53,7 +53,9 @@ class BaseLineTrainer(TrainerSkeleton):
                                 epochs = self.epoch_per_cycle,
                                 steps_per_epoch = len(self.trainloader))
 
-            avg_train, avg_val = sum(self.training_log) / self.epoch_per_cycle, sum(self.val_log) / self.epoch_per_cycle
+            avg_train = sum(self.training_log) / (self.epoch_per_cycle * len(self.trainloader))
+            avg_val = sum(self.val_log) / self.epoch_per_cycle
+            
             self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
             self.logger.experiment.add_scalar("one_cycle/val_loss", avg_val, self.current_cycle)
             self.training_log, self.val_log = [], []
