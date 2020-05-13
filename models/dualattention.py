@@ -1,8 +1,48 @@
 import torch
+import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
-class DualAttentionBlock(nn.Module):
+# from models.bagnetorg import bagnet33
+class DualAttentionModel(nn.Module):
+    def __init__(self, in_channel, num_classes = 2, model = "resnet18"):
+        super().__init__()
+        if model == "resnet18":
+            self.model = torchvision.models.resnet18(pretrained = True)
+            self.model = nn.Sequential(*list(self.model.children())[:-2])
+        else:
+            '''
+                TODO: Check if the architecture is cool
+            '''
+            self.model = bagnet33(pretrained = True)
+            self.model = nn.Sequential(*list(self.model.children())[:-1])
+
+        '''
+            TODO: check this
+        '''
+        out_channel = in_channel
+        self.dahead = DualAttentionHead(in_channel, out_channel = out_channel)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+    
+    '''
+        TODO: Initialize the weights
+    '''
+
+    def forward(self, inputs):
+        '''
+            TODO: 
+            1/ what is difference between nn.AvgPool and nn.AdaptiveAvgPool
+            2/ using transformer for adaptive pooling?
+
+        '''
+        features = self.model(inputs)
+        attention = self.dahead(features)
+        attention_flatten = self.avg_pool(attention)
+        outputs = attention_flatten.view(inputs.shape[0], -1)
+        return outputs
+
+
+class DualAttentionHead(nn.Module):
     def __init__(self, in_channel, out_channel):
         super().__init__()
         '''
@@ -60,15 +100,15 @@ class PointAttentionBlock(nn.Module):
         '''
             TODO: Why divide 8
         '''
-        self.project_query = nn.Conv2d(in_channel, in_channel, kernel_size = 1)
-        self.project_key = nn.Conv2d(in_channel, in_channel, kernel_size = 1)
+        self.project_query = nn.Conv2d(in_channel, in_channel // 8, kernel_size = 1)
+        self.project_key = nn.Conv2d(in_channel, in_channel // 8, kernel_size = 1)
         self.project_value = nn.Conv2d(in_channel, in_channel, kernel_size = 1)
 
         self.softmax = nn.Softmax(dim = -1)
         self.alpha = nn.Parameter(torch.zeros(1))
     
     def forward(self, inputs):
-        batch_size, channels, _, _ = inputs.shape
+        batch_size, channels, height, width = inputs.shape
 
         # Project the inputs
         query = self.project_query(inputs)
@@ -76,19 +116,15 @@ class PointAttentionBlock(nn.Module):
         value = self.project_value(inputs)
 
         # Calculate the attention
-        query = query.view(batch_size, channels, -1).permute(0, 2, 1)
-        key = key.view(batch_size, channels, -1)
-        attention_weight = torch.bmm(query, key)
-
-        '''
-            TODO: check if the sum is correct
-        '''
+        query = query.view(batch_size, -1, height * width)
+        query = query.permute(0, 2, 1)
+        key = key.view(batch_size, -1, height * width)
+        attention_weight = torch.bmm(query, key)        
         attention_weight = self.softmax(attention_weight)
 
         # Get soft attention weight
-        value = value.view(batch_size, channels, -1)
+        value = value.view(batch_size, -1, height * width)
         attention = torch.bmm(value, attention_weight.permute(0, 2, 1))
-
         outputs = self.alpha * attention.view(inputs.shape) + inputs
 
         return outputs

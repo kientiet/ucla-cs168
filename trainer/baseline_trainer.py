@@ -32,10 +32,6 @@ class BaseLineTrainer(TrainerSkeleton):
         return self.model(inputs)
         
     def configure_optimizers(self):
-        '''
-            TODO: check if it works here
-                Should we add weight_decay?
-        '''
         self.optimizer = optim.Adam(self.model.parameters(), lr = self.base_lr)
 
         self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, 
@@ -56,8 +52,10 @@ class BaseLineTrainer(TrainerSkeleton):
             avg_train = sum(self.training_log) / (self.epoch_per_cycle * len(self.trainloader))
             avg_val = sum(self.val_log) / self.epoch_per_cycle
             
-            self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
-            self.logger.experiment.add_scalar("one_cycle/val_loss", avg_val, self.current_cycle)
+            if self.logger is not None:
+                self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
+                self.logger.experiment.add_scalar("one_cycle/val_loss", avg_val, self.current_cycle)
+                
             self.training_log, self.val_log = [], []
     
     def get_max_epochs(self):

@@ -1,19 +1,27 @@
-'''
-    This implementation was based on https://github.com/wielandbrendel/bag-of-local-features-models/
-    with slight variation
-'''
-import torch
 import torch.nn as nn
-import torchvision
-import yaml
 import math
+import torch
+from collections import OrderedDict
+from torch.utils import model_zoo
+
+import os 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+__all__ = ['bagnet9', 'bagnet17', 'bagnet33']
+
+model_urls = {
+            'bagnet9': 'https://bitbucket.org/wielandbrendel/bag-of-feature-pretrained-models/raw/249e8fa82c0913623a807d9d35eeab9da7dcc2a8/bagnet8-34f4ccd2.pth.tar',
+            'bagnet17': 'https://bitbucket.org/wielandbrendel/bag-of-feature-pretrained-models/raw/249e8fa82c0913623a807d9d35eeab9da7dcc2a8/bagnet16-105524de.pth.tar',
+            'bagnet33': 'https://bitbucket.org/wielandbrendel/bag-of-feature-pretrained-models/raw/249e8fa82c0913623a807d9d35eeab9da7dcc2a8/bagnet32-2ddd53ed.pth.tar',
+                            }
+
 
 class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, kernel_size=1):
         super(Bottleneck, self).__init__()
-
+        # print('Creating bottleneck with kernel size {} and stride {} with padding {}'.format(kernel_size, stride, (kernel_size - 1) // 2))
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=kernel_size, stride=stride,
@@ -51,51 +59,27 @@ class Bottleneck(nn.Module):
 
         return out
 
-class BagNetArchitecture(nn.Module):
-    def __init__(self, 
-                in_channel, 
-                net_type = "bagnet-9", 
-                avg_pool = True,
-                BottleNeck = Bottleneck,
-                num_classes = 2):
 
-        super(BagNetArchitecture, self).__init__()
-        self.in_channel = in_channel
+class BagNet(nn.Module):
+
+    def __init__(self, block, layers, strides=[1, 2, 2, 2], kernel3=[0, 0, 0, 0], num_classes=1000, avg_pool=True):
         self.inplanes = 64
-        self.type = net_type
-
-        self.stem_heads = nn.Sequential(
-            nn.Conv2d(in_channel, self.inplanes, kernel_size = 1, stride = 1, padding = 0, bias = False),
-            nn.Conv2d(self.inplanes, self.inplanes, kernel_size = 3, stride = 1, padding = 0, bias = False),
-            nn.BatchNorm2d(self.inplanes, momentum = 0.001),
-            nn.ReLU()
-        )
-
-        layers, strides, kernel3 = self.load_yaml(net_type)
-        self.layer1 = self._make_layer(BottleNeck, 64, layers[0], stride = strides[0], kernel3 = kernel3[0], prefix='layer1')
-        self.layer2 = self._make_layer(BottleNeck, 128, layers[1], stride = strides[1], kernel3 = kernel3[1], prefix='layer2')
-        self.layer3 = self._make_layer(BottleNeck, 256, layers[2], stride = strides[2], kernel3 = kernel3[2], prefix='layer3')
-        self.layer4 = self._make_layer(BottleNeck, 512, layers[3], stride = strides[3], kernel3 = kernel3[3], prefix='layer4')        
-
-        self.avgpool = nn.AvgPool2d(1, stride = 1)
-        self.fc = nn.Linear(512 * BottleNeck.expansion, num_classes)
+        super(BagNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,
+                               bias=False)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(64, momentum=0.001)
+        self.relu = nn.ReLU(inplace=True)
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], kernel3=kernel3[0], prefix='layer1')
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=strides[1], kernel3=kernel3[1], prefix='layer2')
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], kernel3=kernel3[2], prefix='layer3')
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=strides[3], kernel3=kernel3[3], prefix='layer4')
+        self.avgpool = nn.AvgPool2d(1, stride=1)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
         self.avg_pool = avg_pool
-        self.block = BottleNeck
+        self.block = block
 
-        self.init_weight()
-
-    
-    def load_yaml(self, net_type):
-        with open("models/bagnet.yml") as yaml_file:
-            architecture = yaml.load(yaml_file, Loader = yaml.FullLoader)[net_type]
-            layers = architecture["layers"]
-            strides = architecture["strides"]
-            kernel3 = architecture["kernels"]
-        
-        return layers, strides, kernel3
-
-
-    def init_weight(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -103,38 +87,73 @@ class BagNetArchitecture(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
-    
-    def _make_layer(self, block, planes, blocks, stride = 1, kernel3 = 0, prefix = ""):
+
+    def _make_layer(self, block, planes, blocks, stride=1, kernel3=0, prefix=''):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size = 1, stride = stride, bias = False),
-                nn.BatchNorm2d(planes * block.expansion)
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes * block.expansion),
             )
-        
+
         layers = []
         kernel = 1 if kernel3 == 0 else 3
-        layers.append(block(self.inplanes, planes, stride, downsample, kernel_size = kernel))
+        layers.append(block(self.inplanes, planes, stride, downsample, kernel_size=kernel))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             kernel = 1 if kernel3 <= i else 3
-            layers.append(block(self.inplanes, planes, kernel_size = kernel))
-        
+            layers.append(block(self.inplanes, planes, kernel_size=kernel))
+
         return nn.Sequential(*layers)
-    
-    def forward(self, inputs):
-        inputs = self.stem_heads(inputs)
-        inputs = self.layer1(inputs)
-        inputs = self.layer2(inputs)
-        inputs = self.layer3(inputs)
-        inputs = self.layer4(inputs)
-        
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
         if self.avg_pool:
-            inputs = nn.AvgPool2d(inputs.size()[2], stride=1)(inputs)
-            inputs = inputs.view(inputs.size(0), -1)
-            outputs = self.fc(inputs)
+            x = nn.AvgPool2d(x.size()[2], stride=1)(x)
+            x = x.view(x.size(0), -1)
+            x = self.fc(x)
         else:
-            inputs = inputs.permute(0,2,3,1)
-            outputs = self.fc(inputs)
-        
-        return outputs
+            x = x.permute(0,2,3,1)
+            x = self.fc(x)
+
+        return x
+
+def bagnet33(pretrained=False, strides=[2, 2, 2, 1], **kwargs):
+    """Constructs a Bagnet-33 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = BagNet(Bottleneck, [3, 4, 6, 3], strides=strides, kernel3=[1,1,1,1], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['bagnet33']))
+    return model
+
+def bagnet17(pretrained=False, strides=[2, 2, 2, 1], **kwargs):
+    """Constructs a Bagnet-17 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = BagNet(Bottleneck, [3, 4, 6, 3], strides=strides, kernel3=[1,1,1,0], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['bagnet17']))
+    return model
+
+def bagnet9(pretrained=False, strides=[2, 2, 2, 1], **kwargs):
+    """Constructs a Bagnet-9 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = BagNet(Bottleneck, [3, 4, 6, 3], strides=strides, kernel3=[1,1,0,0], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['bagnet9']))
+    return model

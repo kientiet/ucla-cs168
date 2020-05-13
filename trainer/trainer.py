@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score, roc_auc_score
 import itertools
 import numpy as np
 
@@ -24,12 +24,14 @@ class TrainerSkeleton(pl.LightningModule):
             is expanded then I don't have to change the loss function            
             TODO: Explore different cross-entropy
         '''
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCEWithLogitsLoss()
 
         # Logging config
         self.training_log = [] # train logs
         self.val_log = [] # val log
 
+        # Hyperparameters
+        self.threshold = 0.5
 
     def forward(self):
         pass
@@ -46,14 +48,12 @@ class TrainerSkeleton(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         images, labels = train_batch
         logits = self.forward(images)
+        logits = logits.squeeze(dim = 1)
         loss = self.loss_func(logits, labels)
         self.training_log.append(loss.item())
         return {"loss": loss}
 
     def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_i, second_order_closure=None):
-        '''
-            TODO: Add warm start
-        '''
         # update params
         ## Add learning rate to tensorboard
         if self.logger:
@@ -65,10 +65,10 @@ class TrainerSkeleton(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         images, labels = batch
-        preds = self.forward(images)
-        val_loss = self.loss_func(preds, labels)
-        preds = preds.argmax(dim = 1)
-        return {"y_pred": preds.cpu().numpy(),
+        logits = self.forward(images)
+        logits = logits.squeeze()
+        val_loss = self.loss_func(logits, labels)
+        return {"y_pred": logits.cpu().numpy(),
             "y_true": labels.cpu().numpy(),
             "val_loss": val_loss}
     
@@ -79,6 +79,11 @@ class TrainerSkeleton(pl.LightningModule):
         for batch in outputs:
             y_pred = np.concatenate((y_pred, batch["y_pred"]))
             y_true = np.concatenate((y_true, batch["y_true"]))
+        
+        auc_score = roc_auc_score(y_true.astype(int), y_pred)
+
+        # Get the label here
+        y_pred = (y_pred > self.threshold).astype(int)
 
         accuracy = accuracy_score(y_true, y_pred)
         f1 = f1_score(y_true, y_pred) 
@@ -86,6 +91,7 @@ class TrainerSkeleton(pl.LightningModule):
         precision = precision_score(y_true, y_pred)
 
         tensorboard_logs = {
+            "auc_score": auc_score,
             "accuracy_score": accuracy,
             "f1_score": f1,
             "recall_score": recall,
@@ -94,7 +100,7 @@ class TrainerSkeleton(pl.LightningModule):
 
         # self.logger.experiment.add_scalars("metrics", tensorboard_logs, self.current_epoch)
         # Add to one_cycle plot
-        if (self.current_epoch + 1) % self.epoch_per_cycle == 0:
+        if (self.current_epoch + 1) % self.epoch_per_cycle == 0 and self.logger is not None:
             self.logger.experiment.add_scalars("one_cycle", tensorboard_logs, self.current_cycle)
             '''
                 TODO: add confusion matrix here
@@ -117,3 +123,6 @@ class TrainerSkeleton(pl.LightningModule):
         images, labels = next(iter(self.trainloader))
         _, channels, _, _ = images[0]
         return channels
+
+    def get_max_epochs(self):
+        return self.num_cycle * self.epoch_per_cycle
