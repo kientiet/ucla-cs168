@@ -1,3 +1,7 @@
+'''
+    This is from https://github.com/wielandbrendel/bag-of-local-features-models
+'''
+
 import torch.nn as nn
 import math
 import torch
