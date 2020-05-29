@@ -3,19 +3,21 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import torchvision
-
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score, roc_auc_score
-import itertools
 import numpy as np
+from evaluate.evaluator import Evaluator
 
 class TrainerSkeleton(pl.LightningModule):
 	def __init__(self,
 				trainloader,
-				valloader):
+				valloader,
+				valset,
+				netname
+				):
 		super(TrainerSkeleton, self).__init__()
 		self.trainloader = trainloader
 		self.valloader = valloader
+		self.valset = valset
+		self.evaluator = Evaluator(self.valset, netname = netname)
 
 		# Define loss
 		'''
@@ -51,16 +53,22 @@ class TrainerSkeleton(pl.LightningModule):
 		logits = logits.squeeze(dim = 1)
 		loss = self.loss_func(logits, labels)
 		self.training_log.append(loss.item())
-		return {"loss": loss}
+
+		logs = {"learning_rate": self.optimizer.param_groups[0]["lr"]}
+		return {"loss": loss, "log": logs}
 
 	def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_i, second_order_closure=None):
 		# update params
 		## Add learning rate to tensorboard
-		if self.logger:
-			self.logger.experiment.add_scalar("learning_rate", self.optimizer.param_groups[0]["lr"], self.trainer.global_step)
+		# if self.logger:
+		# 	self.logger.experiment.add_scalar("learning_rate", self.optimizer.param_groups[0]["lr"], self.trainer.global_step)
 
 		self.optimizer.step()
-		self.scheduler.step()
+
+		## The warm-up cycle start
+		if current_epoch < self.get_num_cycle():
+			self.scheduler.step()
+
 		self.optimizer.zero_grad()
 
 	def validation_step(self, batch, batch_idx):
@@ -68,6 +76,7 @@ class TrainerSkeleton(pl.LightningModule):
 		logits = self.forward(images)
 		logits = logits.squeeze()
 		val_loss = self.loss_func(logits, labels)
+		logits = torch.sigmoid(logits)
 		return {"y_pred": logits.cpu().numpy(),
 			"y_true": labels.cpu().numpy(),
 			"val_loss": val_loss}
@@ -80,37 +89,18 @@ class TrainerSkeleton(pl.LightningModule):
 			y_pred = np.concatenate((y_pred, batch["y_pred"]))
 			y_true = np.concatenate((y_true, batch["y_true"]))
 
-		auc_score = roc_auc_score(y_true.astype(int), y_pred)
-
-		# Get the label here
-		y_pred = (y_pred > self.threshold).astype(int)
-
-		accuracy = accuracy_score(y_true, y_pred)
-		f1 = f1_score(y_true, y_pred)
-		recall = recall_score(y_true, y_pred)
-		precision = precision_score(y_true, y_pred)
-
-		tensorboard_logs = {
-			"auc_score": auc_score,
-			"accuracy_score": accuracy,
-			"f1_score": f1,
-			"recall_score": recall,
-			"precision_score": precision
-		}
+		tensorboard_logs = self.evaluator.eval_on_test_set(y_true, y_pred)
 
 		# self.logger.experiment.add_scalars("metrics", tensorboard_logs, self.current_epoch)
 		# Add to one_cycle plot
-		if (self.current_epoch + 1) % self.epoch_per_cycle == 0 and self.logger is not None:
-			self.logger.experiment.add_scalars("one_cycle", tensorboard_logs, self.current_cycle)
-			'''
-				TODO: add confusion matrix here
-			'''
+		# if (self.current_epoch + 1) % self.epoch_per_cycle == 0 and self.logger is not None:
+		# 	self.logger.experiment.add_scalars("one_cycle", tensorboard_logs, self.current_cycle)
 
 		# Get the total loss of the validation
 		total_loss = torch.stack([batch["val_loss"] for batch in outputs]).mean()
-		self.val_log.append(total_loss.item())
+		tensorboard_logs["val_loss_epoch"] = total_loss
 
-		logs = {"val_loss": total_loss, "log": tensorboard_logs, "f1_score": f1}
+		logs = {"val_loss": total_loss, "log": tensorboard_logs}
 		return logs
 
 	def train_dataloader(self):
@@ -125,4 +115,8 @@ class TrainerSkeleton(pl.LightningModule):
 		return channels
 
 	def get_max_epochs(self):
+		return self.num_cycle * self.epoch_per_cycle + \
+			self.cool_down if self.cool_down is not None else 0
+
+	def get_num_cycle(self):
 		return self.num_cycle * self.epoch_per_cycle

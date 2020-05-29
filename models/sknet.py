@@ -17,6 +17,7 @@ class SKAttention(nn.Module):
 		self.d = max(in_planes // r, L)
 		self.z = nn.Sequential(
 			nn.Linear(in_planes, self.d),
+			# ! Instance Norm
 			nn.BatchNorm1d(self.d),
 			nn.ReLU()
 		)
@@ -39,12 +40,6 @@ class SKAttention(nn.Module):
 		outputs = F.softmax(outputs, dim = 0)
 
 		return outputs
-
-class Transformer(nn.Module):
-	def __init__(self, in_channel):
-		super().__init__()
-		out_channel = in_channel
-		# self.project_query = nn.Conv2d(in_channel = in_channel, out_channel = in_channel, kernel_size = )
 
 class SKConvolution(nn.Module):
 	def __init__(self,
@@ -90,6 +85,7 @@ class SKConvolution(nn.Module):
 
 		# Stack: (kernel_size, batch, channel)
 		attention = self.attention_block(fused_features)
+
 		outputs = attention[:, :, :, None, None] * features
 		outputs = torch.sum(outputs, dim = 0)
 
@@ -135,13 +131,23 @@ class SKBlock(nn.Module):
 		self.batch_norm = nn.BatchNorm2d(inner_width * self.expansion)
 
 	def forward(self, inputs):
+		# inputs = torch.cat((inputs, inputs), dim = 0)
 		features = self.basic_block(inputs)
 		outputs = features + self.shortcut(inputs)
 		outputs = self.batch_norm(outputs)
 		return outputs
 
 class SKNet(nn.Module):
-	def __init__(self, layers, cardinality, bottleneck_width, r, expansion = 2, num_classes = 2):
+	def __init__(self,
+							layers,
+							cardinality,
+							bottleneck_width,
+							r,
+							expansion = 2,
+							num_classes = 2,
+							complete_model = True
+							):
+
 	 super(SKNet, self).__init__()
 
 	 # Define necessary elements for Net
@@ -209,4 +215,7 @@ class SKNet(nn.Module):
 
 
 def sknet18_32x4d(num_classes):
+	'''
+		TODO: add different kernel size
+	'''
 	return SKNet(layers = [2, 2, 2, 2], cardinality = 32, bottleneck_width = 4, r = 16, num_classes = num_classes)

@@ -2,31 +2,22 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import math
-from models.sknet import sknet18_32x4d
+from models.sknetdual import SKNetDual
 from trainer.trainer import TrainerSkeleton
 
-class SKNetTrainer(TrainerSkeleton):
+class SKNetDualTrainer(TrainerSkeleton):
 	def __init__(self, trainloader, valloader,
-							valset,
-							netname,
-							cool_down = 0,
 							num_classes = 2,
 							base_lr = 1e-3,
 							max_lr = 1e-2,
 							num_cycle = 1,
-							epoch_per_cycle = 6,
+							epoch_per_cycle = 4,
 							running_scheduler = True
 							):
+			super(SKNetDualTrainer, self).__init__(trainloader = trainloader, valloader = valloader)
 
-			super(SKNetTrainer, self).__init__(
-				trainloader = trainloader, valloader = valloader,
-				netname = netname, valset = valset)
-
-			# Load pretrained model
-			self.model = sknet18_32x4d(num_classes)
-
-			# From fc to correct outputs
-			self.num_classes = num_classes
+			# Load sknet model
+			self.model = SKNetDual()
 
 			# Hyperparameters
 			self.running_scheduler = True
@@ -44,7 +35,7 @@ class SKNetTrainer(TrainerSkeleton):
 		return outputs
 
 	def configure_optimizers(self):
-			self.optimizer = optim.SGD(self.model.parameters(), lr = self.base_lr, weight_decay = 1e-4, momentum = 0.9, nesterov = True)
+			self.optimizer = optim.SGD(self.model.parameters(), lr = self.base_lr, weight_decay = 1e-3)
 			self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer,
 													max_lr = self.max_lr,
 													epochs = self.epoch_per_cycle,
@@ -52,12 +43,6 @@ class SKNetTrainer(TrainerSkeleton):
 			return self.optimizer
 
 	def on_epoch_end(self):
-		avg_train = sum(self.training_log) / len(self.trainloader)
-
-		self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
-		self.training_log = []
-
-
 		if (self.current_epoch + 1) % self.epoch_per_cycle == 0:
 			# This is only for 1 cycle
 			self.current_cycle = (self.current_epoch + 1) // self.epoch_per_cycle
@@ -66,3 +51,9 @@ class SKNetTrainer(TrainerSkeleton):
 													epochs = self.epoch_per_cycle,
 													steps_per_epoch = len(self.trainloader))
 
+			avg_train = sum(self.training_log) / (self.epoch_per_cycle * len(self.trainloader))
+			avg_val = sum(self.val_log) / self.epoch_per_cycle
+
+			self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
+			self.logger.experiment.add_scalar("one_cycle/val_loss", avg_val, self.current_cycle)
+			self.training_log, self.val_log = [], []
