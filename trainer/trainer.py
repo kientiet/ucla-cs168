@@ -11,7 +11,8 @@ class TrainerSkeleton(pl.LightningModule):
 				trainloader,
 				valloader,
 				valset,
-				netname
+				netname,
+				threshold = 0.5
 				):
 		super(TrainerSkeleton, self).__init__()
 		self.trainloader = trainloader
@@ -33,7 +34,7 @@ class TrainerSkeleton(pl.LightningModule):
 		self.val_log = [] # val log
 
 		# Hyperparameters
-		self.threshold = 0.5
+		self.threshold = threshold
 
 	def forward(self):
 		pass
@@ -51,6 +52,7 @@ class TrainerSkeleton(pl.LightningModule):
 		images, labels = train_batch
 		logits = self.forward(images)
 		logits = logits.squeeze(dim = 1)
+		labels = labels.type_as(logits)
 		loss = self.loss_func(logits, labels)
 		self.training_log.append(loss.item())
 
@@ -59,13 +61,8 @@ class TrainerSkeleton(pl.LightningModule):
 
 	def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_i, second_order_closure=None):
 		# update params
-		## Add learning rate to tensorboard
-		# if self.logger:
-		# 	self.logger.experiment.add_scalar("learning_rate", self.optimizer.param_groups[0]["lr"], self.trainer.global_step)
-
 		self.optimizer.step()
 
-		## The warm-up cycle start
 		if current_epoch < self.get_num_cycle():
 			self.scheduler.step()
 
@@ -75,6 +72,7 @@ class TrainerSkeleton(pl.LightningModule):
 		images, labels = batch
 		logits = self.forward(images)
 		logits = logits.squeeze()
+		labels = labels.type_as(logits)
 		val_loss = self.loss_func(logits, labels)
 		logits = torch.sigmoid(logits)
 		return {"y_pred": logits.cpu().numpy(),
@@ -90,11 +88,6 @@ class TrainerSkeleton(pl.LightningModule):
 			y_true = np.concatenate((y_true, batch["y_true"]))
 
 		tensorboard_logs = self.evaluator.eval_on_test_set(y_true, y_pred)
-
-		# self.logger.experiment.add_scalars("metrics", tensorboard_logs, self.current_epoch)
-		# Add to one_cycle plot
-		# if (self.current_epoch + 1) % self.epoch_per_cycle == 0 and self.logger is not None:
-		# 	self.logger.experiment.add_scalars("one_cycle", tensorboard_logs, self.current_cycle)
 
 		# Get the total loss of the validation
 		total_loss = torch.stack([batch["val_loss"] for batch in outputs]).mean()

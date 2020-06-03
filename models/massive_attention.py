@@ -1,99 +1,107 @@
 import torch
 import torch.nn as nn
+import torchvision.models as models
 
-from models.dualattentioncustom import DualAttentionCustom, DualAttentionCustomShared
-from models.selfattention import SelfAttentionHead
-from models.sknet import SKBlock
+from models.transformers import Transformers
+from models.senet import get_se_network
+
+picture_dim = [512, 196, 49]
 
 class MassiveAttention(nn.Module):
   def __init__(self,
-              block,
-              layers,
-              cardinality = None,
-              bottleneck_width = None,
-              r = None,
-              expansion = 2,
-              out_dim = 2048,
-              extract_layers = 2,
+              backbone,
+              d_model = 512,
+              dim_feedforward = 1024,
               num_classes = 2,
-              shared_weight = True
+              reduce_backbone = None
               ):
 
     super().__init__()
 
-    # Define necessary elements for Net
-    self.in_planes = 64
-    self.cardinality = cardinality
-    self.bottleneck_width = bottleneck_width
-    self.r = r
-    self.expansion = expansion
-    self.extract_layers = extract_layers - 1
+    self.backbone = self.reduce_depth(backbone, reduce_backbone)
+    self.d_model = d_model
+    self.num_classes = num_classes
 
-    # Stem head
-    self.stem_head = nn.Sequential(
-      nn.Conv2d(in_channels = 3, out_channels = self.in_planes, kernel_size = 7, stride = 2, padding = 2),
-      nn.BatchNorm2d(self.in_planes),
-      nn.ReLU(),
-      nn.MaxPool2d(kernel_size = 3, stride = 2, padding = 1)
-    )
+    # Define transformers
+    backbone_channel = self.get_max_channel()
+    self.transformers = Transformers(d_model = d_model, num_layers = 2, dim_feedforward = dim_feedforward)
 
-    # Make the layers for net
-    self.channels, self.dim = [], [56, 28, 14, 7]
-    self.layer_1 = self._make_layers(block, layers[0], 1)
-    self.layer_2 = self._make_layers(block, layers[1], 2)
-    self.layer_3 = self._make_layers(block, layers[2], 2)
-    self.layer_4 = self._make_layers(block, layers[3], 2)
+    self.upsample = nn.Conv2d(backbone_channel, d_model, kernel_size = 1, bias = False)
 
-    # Dual Attention Head
-    if shared_weight:
-      self.dualattention = DualAttentionCustomShared(self.channels[self.extract_layers:], self.dim[self.extract_layers:])
-    else:
-      self.dualattention = DualAttentionCustom(self.channels[self.extract_layers:], self.dim[self.extract_layers:])
+    # Fully connected to output
+    self.fc1 = nn.Linear(d_model, 1)
 
-    # Transformers head
-    self.transformer = SelfAttentionHead(self.channels[-1])
+    ## It depends on the last
+    reduce_backbone = (-1) if reduce_backbone is None else (-reduce_backbone - 1)
+    self.fc2 = nn.Linear(picture_dim[reduce_backbone], num_classes - 1)
 
-    # Mapping to output
-    self.outputs = nn.Linear(self.transformer.attention_heads.project_dim, num_classes - 1)
 
-  def _make_layers(self, block, num_blocks, stride):
-    strides = [stride] + [1] * (num_blocks - 1)
-    layers = []
-    for stride in strides:
-      layers.append(
-        block(self.in_planes, self.bottleneck_width, self.cardinality, stride, self.expansion, self.r)
-      )
-      self.in_planes = self.expansion * self.bottleneck_width * self.cardinality
-    self.channels.append(self.in_planes)
+  def reduce_depth(self, backbone, layers):
+    backbone = list(backbone.children())[:-2]
+    if layers is not None:
+      backbone = backbone[:-layers]
 
-    self.bottleneck_width *= 2
-    return nn.Sequential(*layers)
+    return nn.Sequential(*backbone)
+
+  def get_max_channel(self):
+    max_channel = 0
+    for p in self.backbone.modules():
+      if isinstance(p, nn.Conv2d):
+        max_channel = max(max_channel, p.out_channels)
+
+    return max_channel
 
   def forward(self, inputs):
-    features = self.stem_head(inputs)
-    store = []
-    features = self.layer_1(features)
-    store.append(features.clone())
+    '''
+      # ! Note: This version will only use the global representation of the CNN for transformers
+    '''
+    features = self.backbone(inputs)
 
-    features = self.layer_2(features)
-    store.append(features.clone())
-
-    features = self.layer_3(features)
-    store.append(features.clone())
-
-    features = self.layer_4(features)
-    global_features = features.clone()
-
-    # This will return modulelist of extract_layers
-    attention = self.dualattention(store[self.extract_layers:], global_features)
+    if features.shape[1] != self.d_model:
+      features = self.upsample(features)
 
     # Put to the transformers to get the final representations
-    attention = self.transformer(attention)
+    attention = self.transformers(features)
 
-    # ** Only get the last vector as the context vector
-    outputs = self.outputs(attention[:,-1, :])
-    return outputs
+    logits = self.fc1(attention)
+    logits = self.fc2(logits.squeeze())
 
-def massive_attention_16x4d(num_classes):
-  return MassiveAttention(block = SKBlock,
-                        layers = [2, 2, 2, 2], cardinality = 32, bottleneck_width = 4, r = 16, num_classes = num_classes)
+    return logits
+
+def resnet18_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(models.resnet18(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+
+def resnet34_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(models.resnet34(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+
+def resnet50_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(models.resnet50(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+def resnet18_se_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(get_se_network("resnet18_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+def resnet34_se_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(get_se_network("resnet34_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+def resnet50_se_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(get_se_network("resnet50_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+def resnext50_se_massiveattention(num_classes, reduce_backbone):
+  return MassiveAttention(get_se_network("resnext50_32x4d_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+
+arch_list = {
+  "resnet18": resnet18_massiveattention,
+  "resnet34": resnet34_massiveattention,
+  "resnet50": resnet50_massiveattention,
+  "resnet18_se": resnet18_se_massiveattention,
+  "resnet34_se": resnet34_se_massiveattention,
+  "resnet50_se": resnet50_se_massiveattention,
+  "resnext50_32x4d_se": resnext50_se_massiveattention,
+}
+
+
+def get_pretrained_net(netname, num_classes, reduce_backbone):
+  return arch_list[netname](num_classes, reduce_backbone)

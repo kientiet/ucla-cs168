@@ -41,7 +41,7 @@ class BaseLineTrainer(TrainerSkeleton):
 				return self.model(inputs)
 
 		def configure_optimizers(self):
-				self.optimizer = optim.SGD(self.model.parameters(), lr = self.base_lr, weight_decay = 1e-4, momentum = 0.9)
+				self.optimizer = optim.SGD(self.model.parameters(), lr = self.base_lr, weight_decay = 1e-5, momentum = 0.9)
 
 				self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer,
 														max_lr = self.max_lr,

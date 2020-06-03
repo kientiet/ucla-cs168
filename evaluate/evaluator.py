@@ -48,8 +48,8 @@ class Evaluator:
 			# Helper method
 			self.test_set_evaluator = TestSetEvaluator(valset, self.threshold)
 
-		def eval_on_test_set(self, y_true, y_pred):
-			return self.test_set_evaluator.eval_all(y_pred = y_pred, y_true = y_true)
+		def eval_on_test_set(self, y_true, y_pred, y_pred_label = None):
+			return self.test_set_evaluator.eval_all(y_pred = y_pred, y_true = y_true, y_pred_label = y_pred_label)
 
 		def run_test_set(self):
 			column_names = ["model_type", "version", "accuracy_score/picture-level", "auc_score/picture-level", "f1_score/picture-level",
