@@ -55,10 +55,10 @@ def load_test(data_type = "CRC_DX"):
 	return valset, msimut_dir, mss_dir
 
 
-def load_train_test(data_type = "CRC_DX", data_mode = "normal"):
+def load_train_test(data_type = "CRC_DX", data_mode = "normal", augmentation = None):
 	# Get the trainset and transform to Dataset
 	trainset, msimut_dir, mss_dir = load_train(data_type = data_type)
-	trainset = MSIDataset(trainset, [msimut_dir, mss_dir], data_mode = "train")
+	trainset = MSIDataset(trainset, [msimut_dir, mss_dir], data_mode = "train", augmentation = augmentation)
 
 	# Get the valset and transform to Dataset
 	valset, msimut_dir, mss_dir = load_test(data_type = data_type)

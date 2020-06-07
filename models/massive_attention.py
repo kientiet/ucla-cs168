@@ -64,7 +64,7 @@ class MassiveAttention(nn.Module):
     attention = self.transformers(features)
 
     logits = self.fc1(attention)
-    logits = self.fc2(logits.squeeze())
+    logits = self.fc2(torch.sigmoid(logits.squeeze()))
 
     return logits
 

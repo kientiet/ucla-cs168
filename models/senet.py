@@ -1,4 +1,5 @@
 import torch.nn as nn
+import math
 from torchvision.models.resnet import ResNet, _resnet
 from torchvision.models.utils import load_state_dict_from_url
 
@@ -27,7 +28,7 @@ class SELayer(nn.Module):
     for m in self.modules():
       if isinstance(m, nn.Linear):
         total_dim = m
-        nn.init.normal_(0, math.sqrt(2. / pow(channel, 2)))
+        nn.init.normal_(m.weight, 0, math.sqrt(2. / pow(channel, 2)))
 
   def forward(self, x):
     batch, channel, _, _ = x.shape

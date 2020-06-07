@@ -9,7 +9,7 @@ from preprocessing.load_sup_dataset import load_train, load_test
 
 file_extension = ".png"
 data_dir = os.path.join(os.getcwd(), "data")
-num_copies = 4
+num_copies = 3
 np.random.seed(42)
 
 
@@ -66,10 +66,11 @@ def load_semi_train(semi_ratio,
   np.random.shuffle(new_unsup_data)
 
   # Get enough dataset
-  total_iteration = np.ceil(len(labeled_dataset) / train_batch_size).astype(int)
-  total_unsup_amount = unsup_batch_size * total_iteration
+  # total_iteration = np.ceil(len(labeled_dataset) / train_batch_size).astype(int)
+  # total_unsup_amount = unsup_batch_size * total_iteration
 
-  ori_images, aug_choices = new_unsup_data[:total_unsup_amount, :-1], new_unsup_data[:total_unsup_amount, -1]
+  # ori_images, aug_choices = new_unsup_data[:total_unsup_amount, :-1], new_unsup_data[:total_unsup_amount, -1]
+  ori_images, aug_choices = new_unsup_data[:, :-1], new_unsup_data[:, -1]
 
   # Create complete dataset
   aug_images = np.array([])
@@ -86,16 +87,16 @@ def load_semi_train(semi_ratio,
   assert len(ori_images) == len(aug_images)
   assert np.array_equal(ori_images[:, -1], aug_images[:, -1])
 
-  ori_dataset = AugmentDataSet(ori_images, [msimut_dir, mss_dir])
+  ori_dataset = AugmentDataSet(ori_images, [msimut_dir, mss_dir], augmentation = 1)
   aug_dataset = AugmentDataSet(aug_images, [aug_dir])
-  labeled_dataset = MSIDataset(labeled_dataset, [msimut_dir, mss_dir], data_mode = "train")
+  labeled_dataset = MSIDataset(labeled_dataset, [msimut_dir, mss_dir], data_mode = "train", augmentation = 1)
 
   return labeled_dataset, ori_dataset, aug_dataset
 
 def get_semi_data(train_batch_size, unsup_batch_size,
                   total_batch_size,
                   data_type = "CRC_DX",
-                  semi_ratio = 0.05):
+                  semi_ratio = 0.1):
   '''
     The data_ratio is to get the training dataset and split follow this ratio between
     labeled and unlabeled data

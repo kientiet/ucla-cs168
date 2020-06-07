@@ -76,12 +76,13 @@ def uda_loss(sup_images,
       light_unsup_logits = model(light_unsup_images)
 
       if tempurature != -1:
-        ori_prob = F.softmax(light_unsup_logits / tempurature, dim=-1)
+        ori_prob_temp = F.softmax(light_unsup_logits / tempurature, dim=-1)
       else:
-        ori_prob = F.softmax(light_unsup_logits, dim = -1)
+        ori_prob_temp = F.softmax(light_unsup_logits, dim = -1)
 
       # Confidence masking
       if uda_confidence > 0:
+        ori_prob = F.softmax(light_unsup_logits, dim = -1)
         largest_prob = torch.max(ori_prob, dim = -1)
         loss_mask = (largest_prob[0] > uda_confidence).type(torch.float32)
       else:
@@ -97,7 +98,7 @@ def uda_loss(sup_images,
     #   aug_logits = aug_logits / tempurature
     aug_log_prob = F.log_softmax(aug_logits, dim = -1)
 
-    unsup_loss = torch.sum(KL_loss(aug_log_prob, ori_prob.detach()), dim = -1)
+    unsup_loss = torch.sum(KL_loss(aug_log_prob, ori_prob_temp.detach()), dim = -1)
     unsup_loss = torch.sum(unsup_loss * loss_mask, dim=-1) / torch.max(torch.sum(loss_mask, dim=-1), torch_device_one())
 
     return supervised_loss + lambda_coeff * unsup_loss, supervised_loss, unsup_loss, anneal_threshold

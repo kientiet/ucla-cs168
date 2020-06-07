@@ -51,58 +51,7 @@ class Evaluator:
 		def eval_on_test_set(self, y_true, y_pred, y_pred_label = None):
 			return self.test_set_evaluator.eval_all(y_pred = y_pred, y_true = y_true, y_pred_label = y_pred_label)
 
-		def run_test_set(self):
-			column_names = ["model_type", "version", "accuracy_score/picture-level", "auc_score/picture-level", "f1_score/picture-level",
-											"recall_score/picture-level", "precision_score/picture-level"]
-
-			for index, checkpoint in enumerate(self.checkpoint[-1:]):
-				skeleton = copy.deepcopy(self.trainer_skeleton)
-				model = skeleton.load_from_checkpoint(checkpoint_path = checkpoint,
-																								trainloader = self.trainloader,
-																								valloader = self.valloader)
-				model.to(device)
-
-				test_dir = os.path.join(os.getcwd(), "evaluate", "data")
-				for test_type in os.listdir(test_dir):
-					print("\n\n>> Evaluate %s noise" % test_type)
-					test_dir_noise = os.path.join(test_dir, test_type)
-
-					print("Extracting the test images in %s" % test_dir_noise)
-					dataset = []
-					all_files = os.listdir(test_dir_noise)
-					for file_name in tqdm(all_files):
-							# Only accept the jpg file
-							if ".jpg" in file_name:
-									components = file_name.split("-")
-									dataset.append([file_name, int(components[1])])
-
-					print("Transform to dataset and loader")
-					valset = MSIDataset(np.array(dataset), test_dir_noise, data_mode = "test")
-					valloader = torch.utils.data.DataLoader(valset, batch_size = self.batch_size, num_workers = 4)
-
-					print("Start evaluating...")
-					logs = self.evaluate(model, valloader)
-
-					pandas_filename = os.path.join(os.getcwd(), "evaluate", "table")
-					if not os.path.isdir(pandas_filename):
-						print(">> Creating folder at %s" % pandas_filename)
-						os.mkdir(pandas_filename)
-
-					pandas_filename = os.path.join(pandas_filename, test_type + ".csv")
-					table = pd.DataFrame(columns = column_names)
-
-					if os.path.isfile(pandas_filename):
-						print(">> Loading table from %s" % pandas_filename)
-						table = pd.read_csv(pandas_filename)
-
-					logs["model_type"] = self.netname
-					logs["version"] = checkpoint
-
-					table = table.append(logs, ignore_index = True)
-					table.to_csv(pandas_filename, index = False)
-
-
-		def evaluate(self, model, valloader, mode = "normal"):
+		def evaluate(self, model, valloader = None):
 			y_true, y_pred = np.array([]), np.array([])
 
 			model.eval()
@@ -110,6 +59,7 @@ class Evaluator:
 				for images, labels in tqdm(valloader, total = len(valloader)):
 					images, labels = images.cuda(), labels.cuda()
 					preds = model(images)
+
 					preds = torch.sigmoid(preds.squeeze())
 					y_pred = np.concatenate((y_pred, preds.cpu()))
 					y_true = np.concatenate((y_true, labels.cpu()))
@@ -156,25 +106,3 @@ class Evaluator:
 			})
 
 			return tensorboard_logs
-
-		def calibrated_graph(self, version):
-			calibrate_graph_dir = os.path.join(os.getcwd(), "evaluate", "calibrate", self.netname)
-			if not os.path.isdir(calibrate_graph_dir):
-				os.mkdir(calibrate_graph_dir)
-
-			self.writer = SummaryWriter(os.path.join(calibrate_graph_dir, version))
-
-			for index, checkpoint in enumerate(self.checkpoint):
-				print(">> Getting calibrated graph for %s" % checkpoint)
-				model = self.trainer_skeleton.load_from_checkpoint(checkpoint_path = checkpoint,
-																								trainloader = self.trainloader,
-																								valloader = self.valloader)
-				model.to(device)
-
-				buf = self.calibrater.get_calibrate_graph(model, self.valloader, checkpoint)
-				image = PIL.Image.open(buf)
-				image = transforms.ToTensor()(image).squeeze()
-				self.writer.add_image(checkpoint, image, index)
-
-
-			self.writer.close()
