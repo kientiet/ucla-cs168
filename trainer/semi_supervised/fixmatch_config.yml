@@ -1,0 +1,33 @@
+# Backbone config
+backbone: resnet34
+pretrained: False
+
+# Training information
+netname: fixmatch
+run_on: CRC_DX
+save_model_dir: checkpoint/CRC_DX/fixmatch
+tensorboard_name: fixmatch
+running_mode: train
+
+#Loss function related
+lambda_coeff: 1
+fixmatch_confidence: 0.95
+
+# Optimizer related
+lr_threshold: [20, 40, 60, 100]
+lr_scheduler: cosine_anneling
+weight_decay: 0.0005
+momentum: 0.9
+nesterov: True
+base_lr: 0.004
+max_lr: 0.03
+warmup_step: 1000
+
+num_cycle: 0
+epoch_per_cycle: 0
+
+total_epoch: 0
+total_step: 10000
+
+# Exponential Moving Average config
+num_updates: null
