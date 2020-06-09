@@ -1,3 +1,7 @@
+'''
+  This file is for getting all the pre_trained model
+'''
+
 import  torchvision.models as pytorch_models
 from models.baseline import BaseLineModel
 from models.massive_attention import get_pretrained_net

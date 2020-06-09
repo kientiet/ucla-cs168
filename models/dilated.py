@@ -1,4 +1,8 @@
-"""Dilated ResNet"""
+'''
+  Dilated ResNet is used for ResNet and Dual Attention.
+  This code is adopted from https://github.com/junfu1115/DANet/blob/master/encoding/dilated/resnet.py
+'''
+
 import math
 import torch
 import torch.utils.model_zoo as model_zoo

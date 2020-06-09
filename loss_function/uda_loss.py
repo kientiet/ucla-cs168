@@ -1,3 +1,10 @@
+'''
+  Idea of UDA is from: https://arxiv.org/abs/1904.12848
+  The code is referred from: https://github.com/google-research/uda/tree/960684e363251772a5938451d4d2bc0f1da9e24b
+
+  Note: The code is translated and reduced by our understanding from the paper
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

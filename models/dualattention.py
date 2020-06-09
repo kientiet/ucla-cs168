@@ -1,3 +1,11 @@
+'''
+  This is the implementation for Dual Attention.
+  The code is implemented based on: https://github.com/junfu1115/DANet/blob/master/encoding/models/danet.py
+    with the variation as we described in our paper
+
+  The Dual Attention idea is from: https://arxiv.org/abs/1809.02983
+'''
+
 import torch
 import torchvision
 import torch.nn as nn

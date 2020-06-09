@@ -1,3 +1,10 @@
+'''
+  The idea of SENet is from: https://arxiv.org/abs/1709.01507
+
+  The code is referenced from: https://github.com/moskomule/senet.pytorch
+    We did make adjustment to work with our setup
+'''
+
 import torch.nn as nn
 import math
 from torchvision.models.resnet import ResNet, _resnet
@@ -149,11 +156,11 @@ def resnet50_se():
   return model
 
 def resnext50_32x4d_se(**kwargs):
-  kwargs["group"] = 32
+  kwargs["groups"] = 32
   kwargs["width_per_group"] = 4
 
   model = ResNet(SEBottleneck, [3, 4, 6, 3], **kwargs)
-  state_dict = load_state_dict_from_url(model_urls["resnet50"], progress = True)
+  state_dict = load_state_dict_from_url(model_urls["resnext50_32x4d"], progress = True)
   model.load_state_dict(state_dict, strict = False)
 
   return model

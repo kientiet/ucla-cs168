@@ -1,3 +1,7 @@
+'''
+  Massive Attention Architecture as we introduced in our paper
+'''
+
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -12,6 +16,7 @@ class MassiveAttention(nn.Module):
               backbone,
               d_model = 512,
               dim_feedforward = 1024,
+              num_layers = 2,
               num_classes = 2,
               reduce_backbone = None
               ):
@@ -24,7 +29,7 @@ class MassiveAttention(nn.Module):
 
     # Define transformers
     backbone_channel = self.get_max_channel()
-    self.transformers = Transformers(d_model = d_model, num_layers = 2, dim_feedforward = dim_feedforward)
+    self.transformers = Transformers(d_model = d_model, num_layers = num_layers, dim_feedforward = dim_feedforward)
 
     self.upsample = nn.Conv2d(backbone_channel, d_model, kernel_size = 1, bias = False)
 
@@ -33,7 +38,8 @@ class MassiveAttention(nn.Module):
 
     ## It depends on the last
     reduce_backbone = (-1) if reduce_backbone is None else (-reduce_backbone - 1)
-    self.fc2 = nn.Linear(picture_dim[reduce_backbone], num_classes - 1)
+    self.fc2 = nn.Linear(picture_dim[reduce_backbone], num_classes)
+    self.activation = torch.nn.LeakyReLU(inplace = True)
 
 
   def reduce_depth(self, backbone, layers):
@@ -64,32 +70,54 @@ class MassiveAttention(nn.Module):
     attention = self.transformers(features)
 
     logits = self.fc1(attention)
-    logits = self.fc2(torch.sigmoid(logits.squeeze()))
+    logits = self.fc2(self.activation(logits.squeeze()))
 
     return logits
 
-def resnet18_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(models.resnet18(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+
+def resnet18_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(models.resnet18(pretrained = True),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
 
-def resnet34_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(models.resnet34(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnet34_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(models.resnet34(pretrained = True),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
 
-def resnet50_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(models.resnet50(pretrained = True), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnet50_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(models.resnet50(pretrained = True),
+                          um_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
-def resnet18_se_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(get_se_network("resnet18_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnet18_se_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(get_se_network("resnet18_se"),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
-def resnet34_se_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(get_se_network("resnet34_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnet34_se_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(get_se_network("resnet34_se"),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
-def resnet50_se_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(get_se_network("resnet50_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnet50_se_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(get_se_network("resnet50_se"),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
-def resnext50_se_massiveattention(num_classes, reduce_backbone):
-  return MassiveAttention(get_se_network("resnext50_32x4d_se"), num_classes = num_classes, reduce_backbone = reduce_backbone)
+def resnext50_se_massiveattention(num_classes, reduce_backbone, num_layers):
+  return MassiveAttention(get_se_network("resnext50_32x4d_se"),
+                          num_classes = num_classes,
+                          reduce_backbone = reduce_backbone,
+                          num_layers = num_layers)
 
 
 arch_list = {
@@ -102,6 +130,5 @@ arch_list = {
   "resnext50_32x4d_se": resnext50_se_massiveattention,
 }
 
-
-def get_pretrained_net(netname, num_classes, reduce_backbone):
-  return arch_list[netname](num_classes, reduce_backbone)
+def get_pretrained_net(netname, num_classes, reduce_backbone, num_layers):
+  return arch_list[netname](num_classes, reduce_backbone, num_layers)

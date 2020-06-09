@@ -15,8 +15,9 @@ class MassiveAttentionTrainer(TrainerSkeleton):
 							max_lr = 1e-2,
 							num_cycle = 1,
 							epoch_per_cycle = 4,
+              num_layers = 2,
 							running_scheduler = True,
-							reduce_backbone = None
+							reduce_backbone = -1
 							):
 		super(MassiveAttentionTrainer, self).__init__(trainloader = trainloader,
 										valloader = valloader,
@@ -24,7 +25,7 @@ class MassiveAttentionTrainer(TrainerSkeleton):
 										netname = netname)
 
 		# Load pretrained model
-		self.model = get_pretrained_net(netname, num_classes, reduce_backbone)
+		self.model = get_pretrained_net(netname, num_classes, reduce_backbone, num_layers)
 
 		# Hyperparameters
 		self.running_scheduler = True
@@ -54,14 +55,6 @@ class MassiveAttentionTrainer(TrainerSkeleton):
 		return self.optimizer
 
 	def on_epoch_end(self):
-		if self.logger:
-			avg_train = sum(self.training_log) / len(self.trainloader)
-			# avg_val = sum(self.val_log) / self.epoch_per_cycle
-
-			self.logger.experiment.add_scalar("one_cycle/training_loss", avg_train, self.current_cycle)
-			# self.logger.experiment.add_scalar("one_cycle/val_loss", avg_val, self.current_cycle)
-			self.training_log = []
-
 		if (self.current_epoch + 1) % self.epoch_per_cycle == 0:
 				# This is only for 1 cycle
 				self.current_cycle = (self.current_epoch + 1) // self.epoch_per_cycle

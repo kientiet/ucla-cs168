@@ -1,3 +1,11 @@
+'''
+  SKNet idea is from: https://arxiv.org/abs/1903.06586
+  We implemented this code from our understanding from the paper
+    In addition, we also refer to ResNeXt from PyTorch to implement
+    the dilation and group channels operation.
+'''
+
+
 from typing import Match, OrderedDict
 import torch
 import torch.nn as nn

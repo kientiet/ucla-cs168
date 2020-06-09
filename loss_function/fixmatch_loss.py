@@ -1,3 +1,10 @@
+'''
+  FixMatch paper can be found here: https://arxiv.org/abs/2001.07685
+  The code is referred from: https://github.com/google-research/fixmatch
+
+  Note: The code is translated and reduced by our understanding from the paper
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

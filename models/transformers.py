@@ -1,3 +1,11 @@
+'''
+  Transformers implemenetation is refered from
+    https://huggingface.co/transformers/_modules/transformers/modeling_bert.html#BertModel.forward
+    and https://pytorch.org/docs/master/_modules/torch/nn/modules/activation.html#MultiheadAttention
+
+  Note: We only use their encoder.
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -101,8 +109,8 @@ class PositionEmbedding(nn.Module):
   def __init__(self, num_position = 256):
     super().__init__()
     self.num_position = num_position // 2
-    self.row_embed = nn.Embedding(50, self.num_position)
-    self.col_emded = nn.Embedding(50, self.num_position)
+    self.row_embed = nn.Embedding(30, self.num_position)
+    self.col_emded = nn.Embedding(30, self.num_position)
 
     self.init_weight()
 
