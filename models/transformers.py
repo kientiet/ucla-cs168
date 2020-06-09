@@ -3,7 +3,7 @@
     https://huggingface.co/transformers/_modules/transformers/modeling_bert.html#BertModel.forward
     and https://pytorch.org/docs/master/_modules/torch/nn/modules/activation.html#MultiheadAttention
 
-  Note: We only use their encoder.
+  Note: Our Transformers only contain encoder
 '''
 
 import torch
